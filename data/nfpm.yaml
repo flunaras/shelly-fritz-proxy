@@ -1,0 +1,68 @@
+# nfpm manifest for shelly-fritz-proxy.
+#
+# Used by both the .deb and .rpm packagers; the same file produces a
+# Debian package on `nfpm pkg --packager deb` and an RPM on
+# `nfpm pkg --packager rpm`. Architecture is selected via the env var
+# NFPM_ARCH (which nfpm reads automatically when ${ARCH} is referenced).
+#
+# Reference: https://nfpm.goreleaser.com/configuration/
+
+name: shelly-fritz-proxy
+arch: ${NFPM_ARCH}
+platform: linux
+version: ${VERSION}
+release: ${RELEASE}
+section: net
+priority: optional
+maintainer: ${MAINTAINER}
+description: |
+  Pretends to be a Shelly Pro 3 EM on the local network and feeds it with
+  live measurements from a FRITZ!Smart Energy 250 connected to a
+  FRITZ!Box. Useful where a consumer (e.g. a Solakon ONE inverter) speaks
+  the Shelly Pro 3 EM API but the available meter is a FRITZ one.
+vendor: ${VENDOR}
+homepage: https://github.com/flunaras/shelly-fritz-proxy
+license: MIT
+
+# DEB metadata (Debian-specific fields; harmless on RPM).
+deb:
+  fields:
+    Bugs: https://github.com/flunaras/shelly-fritz-proxy/issues
+
+# RPM metadata (RPM-specific; harmless on DEB).
+rpm:
+  group: Applications/System
+  summary: Shelly Pro 3 EM emulator backed by a FRITZ!Smart Energy 250
+
+contents:
+  # The binary itself.
+  - src: ${BINARY}
+    dst: /usr/bin/shelly-fritz-proxy
+    file_info:
+      mode: 0755
+
+  # systemd unit. Both Debian and openSUSE put third-party units in
+  # /usr/lib/systemd/system/.
+  - src: ./data/shelly-fritz-proxy.service
+    dst: /usr/lib/systemd/system/shelly-fritz-proxy.service
+    file_info:
+      mode: 0644
+
+  # Default configuration. Marked as a config file so package upgrades
+  # don't clobber user-edited values.
+  - src: ./data/shelly-fritz-proxy.conf
+    dst: /etc/shelly-fritz-proxy/shelly-fritz-proxy.conf
+    type: config|noreplace
+    file_info:
+      mode: 0644
+
+  # Documentation.
+  - src: ./README.md
+    dst: /usr/share/doc/shelly-fritz-proxy/README.md
+    file_info:
+      mode: 0644
+
+scripts:
+  postinstall: ./data/scripts/postinstall.sh
+  preremove:   ./data/scripts/preremove.sh
+  postremove:  ./data/scripts/postremove.sh
